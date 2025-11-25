@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json({ items, total, page, limit });
     } catch (err) {
-        return NextResponse.json({ error: "Server Error" }, { status: 500 });
+        return NextResponse.json({ error: "Failed to get product" }, { status: 500 });
     }
 }
 
@@ -53,6 +53,6 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ product }, { status: 201 });
     } catch (err) {
-        return NextResponse.json({ error: "Server Error" }, { status: 500 });
+        return NextResponse.json({ error: "Failed to edit product" }, { status: 500 });
     }
 }
