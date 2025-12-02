@@ -1,5 +1,5 @@
 import { getUserFromNextRequest, requireAdminFromNextRequestSync } from "@/lib/auth_server";
-import { categoriesCollection, productsCollection } from "@/lib/collections";
+import { productsCollection } from "@/lib/collections";
 import { newId } from "@/lib/id";
 import { CreateProductSchema } from "@/lib/validators";
 import { NextRequest, NextResponse } from "next/server";
