@@ -38,6 +38,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         await products.updateOne({ _id: id }, { $set: updatedData });
         return NextResponse.json({ products })
     } catch (error) {
+        if (error instanceof Response) throw error;
         return NextResponse.json({ error: "Failed to update the product" }, { status: 500 });
     }
 }
@@ -55,6 +56,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
         return NextResponse.json({ ok: true });
     } catch (error) {
+        if (error instanceof Response) throw error;
         return NextResponse.json({ error: "Failed to delete the product" }, { status: 500 });
     }
 }
