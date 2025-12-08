@@ -53,6 +53,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ product }, { status: 201 });
     } catch (err) {
+        if (err instanceof Response) throw err;
         return NextResponse.json({ error: "Failed to add the product" }, { status: 500 });
     }
 }
