@@ -50,6 +50,7 @@ export interface Category {
   slug: string;
   parentId?: ID | null;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface CartItem {
