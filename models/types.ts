@@ -61,7 +61,7 @@ export interface CartItem {
 }
 
 export interface Cart {
-  _id?: ID;
+  _id: ID;
   userId: ID;
   items: CartItem[];
   updatedAt: string;
