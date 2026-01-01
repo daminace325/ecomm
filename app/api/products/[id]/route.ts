@@ -12,7 +12,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         if (!product) return NextResponse.json({ error: "Not Found" }, { status: 404 });
 
         return NextResponse.json({ product });
-    } catch (error) {
+    } catch (err) {
         return NextResponse.json({ error: "Failed to get the product" }, { status: 500 });
     }
 }
@@ -22,7 +22,6 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         const user = await getUserFromNextRequest(req);
         requireAdminFromNextRequestSync(user);
 
-        const { id } = params;
         const body = await req.json();
         const parsed = UpdateProductSchema.safeParse(body);
         if (!parsed.success) {
@@ -30,15 +29,21 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ error: flattenedParsed.fieldErrors }, { status: 400 });
         }
 
+        const now = new Date().toISOString();
+
         const updatedData = {
             ...parsed.data,
-            updatedAt: new Date().toISOString()
+            updatedAt: now
         };
         const products = await productsCollection();
-        await products.updateOne({ _id: id }, { $set: updatedData });
-        return NextResponse.json({ products })
-    } catch (error) {
-        if (error instanceof Response) throw error;
+        const result = await products.updateOne({ _id: params.id }, { $set: updatedData });
+
+        if (result.matchedCount === 0) return NextResponse.json({ error: "Product not found" }, { status: 404 });
+
+        const updated = await products.findOne({_id: params.id});
+        return NextResponse.json({ product: updated })
+    } catch (err) {
+        if (err instanceof Response) throw err;
         return NextResponse.json({ error: "Failed to update the product" }, { status: 500 });
     }
 }
@@ -48,15 +53,14 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
         const user = await getUserFromNextRequest(req);
         requireAdminFromNextRequestSync(user);
 
-        const { id } = params;
         const products = await productsCollection();
-        const result = await products.deleteOne({ _id: id });
+        const result = await products.deleteOne({ _id: params.id });
 
         if (result.deletedCount === 0) return NextResponse.json({ error: "Product not found" }, { status: 404 });
 
         return NextResponse.json({ ok: true });
-    } catch (error) {
-        if (error instanceof Response) throw error;
+    } catch (err) {
+        if (err instanceof Response) throw err;
         return NextResponse.json({ error: "Failed to delete the product" }, { status: 500 });
     }
 }
