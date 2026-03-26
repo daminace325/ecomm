@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
             subtotal,
             total
         });
-    } catch (error) {
+    } catch (err) {
         return NextResponse.json({ error: "Failed to checkout" }, { status: 500 });
     }
 }
