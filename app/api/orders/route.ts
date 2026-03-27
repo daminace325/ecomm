@@ -116,3 +116,22 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Failed to create order" }, { status: 500 });
     }
 }
+
+export async function GET(req: NextRequest) {
+    try {
+        const user = await getUserFromNextRequest(req);
+        if (!user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+        }
+
+        const orders = await ordersCollection();
+        const items = await orders
+            .find({ userId: user._id })
+            .sort({ createdAt: -1 })
+            .toArray();
+
+        return NextResponse.json({ items });
+    } catch (err) {
+        return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 });
+    }
+}
