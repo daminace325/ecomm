@@ -4,10 +4,11 @@ import { UpdateProductSchema } from "@/lib/validators";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
+        const { id } = await params;
         const products = await productsCollection();
-        const product = await products.findOne({ _id: params.id });
+        const product = await products.findOne({ _id: id });
 
         if (!product) return NextResponse.json({ error: "Not Found" }, { status: 404 });
 
@@ -17,8 +18,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
+        const { id } = await params;
         const user = await getUserFromNextRequest(req);
         requireAdminFromNextRequestSync(user);
 
@@ -36,11 +38,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             updatedAt: now
         };
         const products = await productsCollection();
-        const result = await products.updateOne({ _id: params.id }, { $set: updatedData });
+        const result = await products.updateOne({ _id: id }, { $set: updatedData });
 
         if (result.matchedCount === 0) return NextResponse.json({ error: "Product not found" }, { status: 404 });
 
-        const updated = await products.findOne({_id: params.id});
+        const updated = await products.findOne({_id: id});
         return NextResponse.json({ product: updated })
     } catch (err) {
         if (err instanceof Response) throw err;
@@ -48,13 +50,14 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
+        const { id } = await params;
         const user = await getUserFromNextRequest(req);
         requireAdminFromNextRequestSync(user);
 
         const products = await productsCollection();
-        const result = await products.deleteOne({ _id: params.id });
+        const result = await products.deleteOne({ _id: id });
 
         if (result.deletedCount === 0) return NextResponse.json({ error: "Product not found" }, { status: 404 });
 

@@ -4,10 +4,11 @@ import { UpdateCategorySchema } from "@/lib/validators";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
+        const { id } = await params;
         const categories = await categoriesCollection();
-        const category = await categories.findOne({ _id: params.id });
+        const category = await categories.findOne({ _id: id });
 
         if (!category) return NextResponse.json({ error: "Not Found" }, { status: 404 });
 
@@ -17,8 +18,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
+        const { id } = await params;
         const user = await getUserFromNextRequest(req);
         requireAdminFromNextRequestSync(user);
 
@@ -37,11 +39,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         }
 
         const categories = await categoriesCollection();
-        const result = await categories.updateOne({ _id: params.id }, { $set: updatedData });
+        const result = await categories.updateOne({ _id: id }, { $set: updatedData });
 
         if (result.matchedCount === 0) return NextResponse.json({ error: "Category not found" }, { status: 404 });
 
-        const updated = await categories.findOne({ _id: params.id });
+        const updated = await categories.findOne({ _id: id });
         return NextResponse.json({ category: updated });
     } catch (err) {
         if (err instanceof Response) throw err;
@@ -49,13 +51,14 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
+        const { id } = await params;
         const user = await getUserFromNextRequest(req);
         requireAdminFromNextRequestSync(user);
         
         const categories = await categoriesCollection();
-        const result = await categories.deleteOne({ _id: params.id });
+        const result = await categories.deleteOne({ _id: id });
         
         if (result.deletedCount === 0) return NextResponse.json({ error: "Category not found" }, { status: 404 });
         

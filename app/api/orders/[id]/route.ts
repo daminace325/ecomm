@@ -2,15 +2,16 @@ import { getUserFromNextRequest } from "@/lib/auth_server";
 import { ordersCollection } from "@/lib/collections";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
+        const { id } = await params;
         const user = await getUserFromNextRequest(req);
         if (!user) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
         const orders = await ordersCollection();
-        const order = await orders.findOne({ _id: params.id });
+        const order = await orders.findOne({ _id: id });
 
         if (!order) {
             return NextResponse.json({ error: "Not found" }, { status: 404 });
