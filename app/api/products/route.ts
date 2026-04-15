@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
         const limit = Math.min(100, Math.max(1, Number(url.searchParams.get("limit") ?? "12")));
 
         const filter: any = {};
-        if (q) filter.title = { $regex: q, $options: "i" };
+        if (q) filter.title = { $regex: q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" };
 
         const products = await productsCollection();
         const cursor = products.find(filter).sort({ createdAt: -1 }).project({ title: 1, price: 1, images: 1, slug: 1, stock: 1 });
