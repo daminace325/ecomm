@@ -14,7 +14,9 @@ export async function POST(req: NextRequest) {
         if (!email || typeof email !== "string") {
             return NextResponse.json({ error: "Email is required" }, { status: 400 });
         }
-        if (!password || typeof password !== "string" || password.length < 6) {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return NextResponse.json({ error: "Invalid email format" }, { status: 400 });
+        }
             return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
         }
 
