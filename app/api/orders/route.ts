@@ -131,8 +131,9 @@ export async function GET(req: NextRequest) {
         }
 
         const orders = await ordersCollection();
+        const filter = user.role === "admin" ? {} : { userId: user._id };
         const items = await orders
-            .find({ userId: user._id })
+            .find(filter)
             .sort({ createdAt: -1 })
             .toArray();
 
