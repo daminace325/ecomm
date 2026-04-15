@@ -28,7 +28,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         const parsed = UpdateCategorySchema.safeParse(body);
         if (!parsed.success) {
             const flattenedParsed = z.flattenError(parsed.error);
-            return NextResponse.json({ error: flattenedParsed }, { status: 400 });
+            return NextResponse.json({ error: flattenedParsed.fieldErrors }, { status: 400 });
         }
 
         const now = new Date().toISOString();
