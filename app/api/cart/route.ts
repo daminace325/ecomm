@@ -82,9 +82,10 @@ export async function POST(req: NextRequest) {
 
         cart.updatedAt = new Date().toISOString();
 
+        const { _id: _cartId, ...cartWithoutId } = cart;
         await carts.updateOne(
             { userId: user._id },
-            { $set: cart },
+            { $set: cartWithoutId },
             { upsert: true }
         );
 
