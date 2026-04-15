@@ -20,3 +20,12 @@ export const CreateCategorySchema = z.object({
 });
 
 export const UpdateCategorySchema = CreateCategorySchema.partial();
+
+export const AddressSchema = z.object({
+  line1: z.string().min(1),
+  line2: z.string().optional(),
+  city: z.string().min(1),
+  state: z.string().optional(),
+  postalCode: z.string().min(1),
+  country: z.string().optional(),
+});
