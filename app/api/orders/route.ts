@@ -130,14 +130,21 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }
 
+        const url = new URL(req.url);
+        const page = Math.max(1, Number(url.searchParams.get("page") ?? "1"));
+        const limit = Math.min(100, Math.max(1, Number(url.searchParams.get("limit") ?? "10")));
+
         const orders = await ordersCollection();
         const filter = user.role === "admin" ? {} : { userId: user._id };
         const items = await orders
             .find(filter)
             .sort({ createdAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(limit)
             .toArray();
+        const total = await orders.countDocuments(filter);
 
-        return NextResponse.json({ items });
+        return NextResponse.json({ items, total, page, limit });
     } catch (err) {
         return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 });
     }
