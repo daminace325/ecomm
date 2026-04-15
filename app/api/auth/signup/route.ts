@@ -18,9 +18,10 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
         }
 
+        const normalizedEmail = email.toLowerCase().trim();
         const users = await usersCollection();
 
-        const existing = await users.findOne({ email });
+        const existing = await users.findOne({ email: normalizedEmail });
         if (existing) {
             return NextResponse.json({ error: "Email already exists" }, { status: 409 })
         }
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
         const user = {
             _id,
             name,
-            email,
+            email: normalizedEmail,
             passwordHash,
             role: "user" as const,
             createdAt: now

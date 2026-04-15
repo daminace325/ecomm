@@ -20,9 +20,10 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Password is required" }, { status: 400 });
         }
 
+        const normalizedEmail = email.toLowerCase().trim();
         const users = await usersCollection();
 
-        const user = await users.findOne({ email });
+        const user = await users.findOne({ email: normalizedEmail });
         if (!user) {
             return NextResponse.json({ error: "Invalid Credentials" }, { status: 401 });
         }
