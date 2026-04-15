@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
 
             if (product.stock < cartItem.qty) {
                 return {
-                    error: `Insufficient stock for product for product ${product._id}`,
+                    error: `Insufficient stock for product ${product._id}`,
                     productId: product._id
                 };
             }
