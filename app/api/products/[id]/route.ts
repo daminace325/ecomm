@@ -38,6 +38,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             updatedAt: now
         };
         const products = await productsCollection();
+        if (parsed.data.slug) {
+            const existingSlug = await products.findOne({ slug: parsed.data.slug, _id: { $ne: id } });
+            if (existingSlug) {
+                return NextResponse.json({ error: "A product with this slug already exists" }, { status: 409 });
+            }
+        }
+
         const result = await products.updateOne({ _id: id }, { $set: updatedData });
 
         if (result.matchedCount === 0) return NextResponse.json({ error: "Product not found" }, { status: 404 });

@@ -39,6 +39,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         }
 
         const categories = await categoriesCollection();
+        if (parsed.data.slug) {
+            const existingSlug = await categories.findOne({ slug: parsed.data.slug, _id: { $ne: id } });
+            if (existingSlug) {
+                return NextResponse.json({ error: "A category with this slug already exists" }, { status: 409 });
+            }
+        }
+
         const result = await categories.updateOne({ _id: id }, { $set: updatedData });
 
         if (result.matchedCount === 0) return NextResponse.json({ error: "Category not found" }, { status: 404 });

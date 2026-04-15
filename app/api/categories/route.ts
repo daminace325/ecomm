@@ -39,6 +39,11 @@ export async function POST(req: NextRequest) {
         }
 
         const categories = await categoriesCollection();
+        const existingSlug = await categories.findOne({ slug: parsed.data.slug });
+        if (existingSlug) {
+            return NextResponse.json({ error: "A category with this slug already exists" }, { status: 409 });
+        }
+
         await categories.insertOne(category);
 
         return NextResponse.json({ category }, { status: 201 });
