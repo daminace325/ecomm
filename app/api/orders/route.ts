@@ -46,20 +46,26 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        for (const cartItem of cart.items) {
-            const result = await products.updateOne(
-                {
-                    _id: cartItem.productId,
-                    stock: { $gte: cartItem.qty }
-                },
-                {
-                    $inc: { stock: -cartItem.qty }
-                }
-            );
-
-            if (result.matchedCount !== 1) {
-                return NextResponse.json({ error: "Stock conflict", productId: cartItem.productId }, { status: 409 });
+        const bulkOps = cart.items.map(cartItem => ({
+            updateOne: {
+                filter: { _id: cartItem.productId, stock: { $gte: cartItem.qty } },
+                update: { $inc: { stock: -cartItem.qty } }
             }
+        }));
+
+        const bulkResult = await products.bulkWrite(bulkOps, { ordered: false });
+
+        if (bulkResult.matchedCount !== cart.items.length) {
+            // Rollback: restore stock for items that were decremented
+            const rollbackOps = cart.items.map(cartItem => ({
+                updateOne: {
+                    filter: { _id: cartItem.productId },
+                    update: { $inc: { stock: cartItem.qty } }
+                }
+            }));
+            await products.bulkWrite(rollbackOps, { ordered: false });
+
+            return NextResponse.json({ error: "Stock conflict, order cancelled" }, { status: 409 });
         }
 
         let subtotal = 0;
