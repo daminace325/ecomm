@@ -1,5 +1,5 @@
 import { getUserFromNextRequest, requireAdminFromNextRequestSync } from "@/lib/auth_server";
-import { productsCollection } from "@/lib/collections";
+import { categoriesCollection, productsCollection } from "@/lib/collections";
 import { UpdateProductSchema } from "@/lib/validators";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -42,6 +42,14 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             const existingSlug = await products.findOne({ slug: parsed.data.slug, _id: { $ne: id } });
             if (existingSlug) {
                 return NextResponse.json({ error: "A product with this slug already exists" }, { status: 409 });
+            }
+        }
+
+        if (parsed.data.categories && parsed.data.categories.length > 0) {
+            const categories = await categoriesCollection();
+            const validCount = await categories.countDocuments({ _id: { $in: parsed.data.categories } });
+            if (validCount !== parsed.data.categories.length) {
+                return NextResponse.json({ error: "One or more category IDs are invalid" }, { status: 400 });
             }
         }
 
