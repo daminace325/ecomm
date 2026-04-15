@@ -42,8 +42,8 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "ProductID is required" }, { status: 400 });
         }
 
-        if (typeof qty !== "number" || qty <= 0) {
-            return NextResponse.json({ error: "Quantity must be valid" }, { status: 400 });
+        if (typeof qty !== "number" || !Number.isInteger(qty) || qty <= 0) {
+            return NextResponse.json({ error: "Quantity must be a positive integer" }, { status: 400 });
         }
 
         const products = await productsCollection();
