@@ -4,7 +4,8 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 
 
-const JWT_SECRET = process.env.JWT_SECRET!;
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error("JWT_SECRET environment variable is not set");
 const cookieName = "token";
 
 export async function POST(req: NextRequest) {
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
 
         const token = jwt.sign(
             { userId: user._id, role: user.role },
-            JWT_SECRET,
+            JWT_SECRET as string,
             { expiresIn: "7d" }
         );
 
