@@ -11,10 +11,10 @@ export async function GET(req: NextRequest) {
         const carts = await cartsCollection();
         let cart = await carts.findOne({ userId: user._id });
 
-        const now = new Date().toISOString();
-        const _id = newId();
-
         if (!cart) {
+            const now = new Date().toISOString();
+            const _id = newId();
+
             cart = {
                 _id,
                 userId: user._id,
