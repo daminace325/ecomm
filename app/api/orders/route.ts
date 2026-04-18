@@ -46,25 +46,31 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        const bulkOps = cart.items.map(cartItem => ({
-            updateOne: {
-                filter: { _id: cartItem.productId, stock: { $gte: cartItem.qty } },
-                update: { $inc: { stock: -cartItem.qty } }
+        const decremented: { productId: string; qty: number }[] = [];
+        let stockConflict = false;
+
+        for (const cartItem of cart.items) {
+            const result = await products.updateOne(
+                { _id: cartItem.productId, stock: { $gte: cartItem.qty } },
+                { $inc: { stock: -cartItem.qty } }
+            );
+
+            if (result.modifiedCount === 1) {
+                decremented.push({ productId: cartItem.productId, qty: cartItem.qty });
+            } else {
+                stockConflict = true;
+                break;
             }
-        }));
+        }
 
-        const bulkResult = await products.bulkWrite(bulkOps, { ordered: false });
-
-        if (bulkResult.matchedCount !== cart.items.length) {
-            // Rollback: restore stock for items that were decremented
-            const rollbackOps = cart.items.map(cartItem => ({
-                updateOne: {
-                    filter: { _id: cartItem.productId },
-                    update: { $inc: { stock: cartItem.qty } }
-                }
-            }));
-            await products.bulkWrite(rollbackOps, { ordered: false });
-
+        if (stockConflict) {
+            // Rollback only the items that actually decremented.
+            for (const item of decremented) {
+                await products.updateOne(
+                    { _id: item.productId },
+                    { $inc: { stock: item.qty } }
+                );
+            }
             return NextResponse.json({ error: "Stock conflict, order cancelled" }, { status: 409 });
         }
 
