@@ -52,22 +52,18 @@ export async function POST(req: NextRequest) {
         if (!product) return NextResponse.json({ error: "Product not found" }, { status: 404 });
 
         const carts = await cartsCollection();
-        let cart = await carts.findOne({ userId: user._id });
+        const existing = await carts.findOne({ userId: user._id });
 
         const now = new Date().toISOString();
-        const _id = newId();
-
-        if (!cart) {
-            cart = {
-                _id,
-                userId: user._id,
-                items: [],
-                updatedAt: now
-            };
-        }
+        const cart = existing ?? {
+            _id: newId(),
+            userId: user._id,
+            items: [],
+            updatedAt: now,
+        };
 
         const itemIndex = cart.items.findIndex(
-            (item: any) => item.productId === productId
+            (item) => item.productId === productId
         );
 
         if (itemIndex >= 0) {
@@ -82,12 +78,14 @@ export async function POST(req: NextRequest) {
 
         cart.updatedAt = new Date().toISOString();
 
-        const { _id: _cartId, ...cartWithoutId } = cart;
-        await carts.updateOne(
-            { userId: user._id },
-            { $set: cartWithoutId },
-            { upsert: true }
-        );
+        if (existing) {
+            await carts.updateOne(
+                { userId: user._id },
+                { $set: { items: cart.items, updatedAt: cart.updatedAt } }
+            );
+        } else {
+            await carts.insertOne(cart);
+        }
 
         return NextResponse.json({ cart });
     } catch (err) {
