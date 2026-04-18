@@ -79,13 +79,14 @@ export async function POST(req: NextRequest) {
         const orderItems = cart.items.map(cartItem => {
             const product = productDocs.find(p => p._id === cartItem.productId)!;
 
-            const lineTotal = product.price * cartItem.qty;
+            const unitPrice = cartItem.priceAtAdd;
+            const lineTotal = unitPrice * cartItem.qty;
             subtotal += lineTotal;
 
             return {
                 productId: product._id,
                 qty: cartItem.qty,
-                price: product.price,
+                price: unitPrice,
                 vendorId: product.vendorId ?? undefined
             };
         });
