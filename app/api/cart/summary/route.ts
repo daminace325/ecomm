@@ -44,13 +44,14 @@ export async function POST(req: NextRequest) {
                 };
             }
 
-            const lineTotal = product.price * cartItem.qty;
+            const unitPrice = cartItem.priceAtAdd;
+            const lineTotal = unitPrice * cartItem.qty;
             subtotal += lineTotal;
 
             return {
                 productId: product._id,
                 title: product.title,
-                unitPrice: product.price,
+                unitPrice,
                 qty: cartItem.qty,
                 lineTotal
             }
