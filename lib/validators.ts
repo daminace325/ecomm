@@ -11,7 +11,16 @@ export const CreateProductSchema = z.object({
   stock: z.number().int().nonnegative().default(0),
 });
 
-export const UpdateProductSchema = CreateProductSchema.partial();
+export const UpdateProductSchema = z.object({
+  title: z.string().min(1).optional(),
+  slug: z.string().min(1).optional(),
+  description: z.string().optional(),
+  images: z.array(z.string()).optional(),
+  price: z.number().nonnegative().optional(),
+  currency: z.string().optional(),
+  categories: z.array(z.string()).optional(),
+  stock: z.number().int().nonnegative().optional(),
+});
 
 export const CreateCategorySchema = z.object({
   name: z.string().min(1),
@@ -19,7 +28,11 @@ export const CreateCategorySchema = z.object({
   parentId: z.string().optional(),
 });
 
-export const UpdateCategorySchema = CreateCategorySchema.partial();
+export const UpdateCategorySchema = z.object({
+  name: z.string().min(1).optional(),
+  slug: z.string().min(1).optional(),
+  parentId: z.string().optional(),
+});
 
 export const AddressSchema = z.object({
   line1: z.string().min(1),
