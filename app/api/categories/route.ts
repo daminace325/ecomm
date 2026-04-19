@@ -5,10 +5,22 @@ import { CreateCategorySchema } from "@/lib/validators";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
     try {
+        const url = new URL(req.url);
+        const parentIdParam = url.searchParams.get("parentId");
+
+        const filter: Record<string, unknown> = {};
+        if (parentIdParam !== null) {
+            if (parentIdParam === "null" || parentIdParam === "") {
+                filter.$or = [{ parentId: null }, { parentId: { $exists: false } }];
+            } else {
+                filter.parentId = parentIdParam;
+            }
+        }
+
         const categories = await categoriesCollection();
-        const items = await categories.find({}).sort({ name: 1 }).toArray();
+        const items = await categories.find(filter).sort({ name: 1 }).toArray();
         return NextResponse.json({ items })
     } catch (err) {
         return NextResponse.json({ error: "Failed to get categories" }, { status: 500 })
