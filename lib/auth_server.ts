@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { usersCollection } from "./collections";
 import type { User } from "../models/types";
@@ -20,6 +21,21 @@ export async function getUserFromNextRequest(req: NextRequest): Promise<User | n
     const user = await users.findOne({ _id: decoded.userId });
     return user ?? null;
   } catch (err) {
+    return null;
+  }
+}
+
+export async function getUserFromCookies(): Promise<User | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(cookieName)?.value;
+  if (!token) return null;
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET as string) as { userId: string; role: string };
+    const users = await usersCollection();
+    const user = await users.findOne({ _id: decoded.userId });
+    return user ?? null;
+  } catch {
     return null;
   }
 }
