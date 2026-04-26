@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Pages that require a signed-in user. Add more as you build them.
-const PROTECTED_PREFIXES = ["/account", "/cart", "/profile", "/orders", "/checkout"];
+const PROTECTED_PREFIXES = ["/account", "/cart", "/profile", "/orders", "/checkout", "/admin"];
 
 // If a signed-in user hits these, send them home instead.
 const AUTH_PAGES = ["/signin", "/signup"];

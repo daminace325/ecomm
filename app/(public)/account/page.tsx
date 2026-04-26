@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ShoppingBag, UserPen, MapPin, KeyRound, LogOut } from "lucide-react";
+import { ShoppingBag, UserPen, MapPin, KeyRound, LogOut, LayoutDashboard } from "lucide-react";
 import { getUserFromCookies } from "@/lib/auth_server";
 import SignOutButton from "@/components/SignOutButton";
 
@@ -37,12 +37,21 @@ export default async function AccountPage() {
         },
     ];
 
+    if (user.role === "admin") {
+        tiles.push({
+            href: "/admin",
+            icon: LayoutDashboard,
+            title: "Admin Dashboard",
+            desc: "Manage products, categories, and orders",
+        });
+    }
+
     return (
         <main className="mx-auto max-w-5xl px-4 py-8">
             <div className="mb-8">
-                <h1 className="text-3xl font-semibold">Your Account</h1>
-                <p className="mt-1 text-sm">
-                    Hello, <span className="font-medium">{user.name}</span>
+                <h1 className="text-3xl font-semibold text-white">Your Account</h1>
+                <p className="mt-1 text-sm text-slate-400">
+                    Hello, <span className="font-medium text-slate-200">{user.name}</span>
                 </p>
             </div>
 

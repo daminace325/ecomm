@@ -6,16 +6,31 @@ export default async function Home() {
     const categories = await categoriesCollection();
     const products = await productsCollection();
 
-    const topCategories = await categories
-        .find({ $or: [{ parentId: null }, { parentId: { $exists: false } }] })
-        .sort({ name: 1 })
-        .limit(10)
+    const allCategories = await categories
+        .find({})
+        .project({ name: 1, slug: 1, parentId: 1 })
         .toArray();
+
+    // Build parent -> children map (categories are limited to 2 levels deep).
+    const childrenByParent = new Map<string, string[]>();
+    for (const c of allCategories) {
+        const parentId = c.parentId as string | null | undefined;
+        if (!parentId) continue;
+        const arr = childrenByParent.get(parentId) ?? [];
+        arr.push(c._id as string);
+        childrenByParent.set(parentId, arr);
+    }
+
+    const topCategories = allCategories
+        .filter((c) => !c.parentId)
+        .sort((a, b) => (a.name as string).localeCompare(b.name as string))
+        .slice(0, 10);
 
     const sections = await Promise.all(
         topCategories.map(async (cat) => {
+            const ids = [cat._id as string, ...(childrenByParent.get(cat._id as string) ?? [])];
             const items = await products
-                .find({ categories: cat._id })
+                .find({ categories: { $in: ids } })
                 .sort({ createdAt: -1 })
                 .limit(8)
                 .project({ title: 1, price: 1, currency: 1, images: 1, slug: 1 })
@@ -27,7 +42,7 @@ export default async function Home() {
     return (
         <main className="mx-auto max-w-7xl px-4 py-6">
             {sections.length === 0 && (
-                <div className="rounded-md bg-white p-8 text-center text-zinc-500">
+                <div className="rounded-md border border-slate-700 bg-slate-800 p-8 text-center text-slate-400">
                     No categories yet. Add some via the admin to populate the storefront.
                 </div>
             )}
@@ -36,22 +51,22 @@ export default async function Home() {
                 {sections.map(({ category, items }) => (
                     <section
                         key={category._id}
-                        className="rounded-md bg-white p-4 shadow-sm"
+                        className="rounded-md border border-slate-700 bg-slate-800 p-4 shadow-sm"
                     >
                         <div className="mb-4 flex items-center justify-between">
-                            <h2 className="text-xl font-semibold text-zinc-900">
+                            <h2 className="text-xl font-semibold text-white">
                                 {category.name}
                             </h2>
                             <Link
                                 href={`/c/${category.slug}`}
-                                className="text-sm text-sky-600 hover:underline"
+                                className="text-sm text-sky-400 hover:underline"
                             >
                                 See all →
                             </Link>
                         </div>
 
                         {items.length === 0 ? (
-                            <p className="py-8 text-center text-sm text-zinc-500">
+                            <p className="py-8 text-center text-sm text-slate-300">
                                 No products in this category yet.
                             </p>
                         ) : (

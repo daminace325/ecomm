@@ -24,7 +24,7 @@ export default async function Navbar() {
                             name="q"
                             type="search"
                             placeholder="Search products..."
-                            className="flex-1 bg-white px-4 py-2 text-zinc-900 outline-none"
+                            className="flex-1 bg-slate-100 px-4 py-2 text-slate-900 outline-none"
                         />
                         <button
                             type="submit"

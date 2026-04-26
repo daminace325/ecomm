@@ -1,5 +1,5 @@
 import { getUserFromNextRequest, requireAdminFromNextRequestSync } from "@/lib/auth_server";
-import { categoriesCollection } from "@/lib/collections";
+import { categoriesCollection, productsCollection } from "@/lib/collections";
 import { UpdateCategorySchema } from "@/lib/validators";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -46,6 +46,30 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             }
         }
 
+        if (parsed.data.parentId) {
+            if (parsed.data.parentId === id) {
+                return NextResponse.json({ error: "Category cannot be its own parent" }, { status: 400 });
+            }
+            const parent = await categories.findOne({ _id: parsed.data.parentId });
+            if (!parent) {
+                return NextResponse.json({ error: "Parent category not found" }, { status: 404 });
+            }
+            if (parent.parentId) {
+                return NextResponse.json({ error: "Only 2-level category nesting is allowed" }, { status: 400 });
+            }
+            if (parent.parentId === id) {
+                return NextResponse.json({ error: "Circular category relationship not allowed" }, { status: 400 });
+            }
+            // If this category itself has children, it cannot become a child (would create grandchildren).
+            const hasChildren = await categories.countDocuments({ parentId: id });
+            if (hasChildren > 0) {
+                return NextResponse.json(
+                    { error: "Cannot nest: this category already has subcategories" },
+                    { status: 400 }
+                );
+            }
+        }
+
         const result = await categories.updateOne({ _id: id }, { $set: updatedData });
 
         if (result.matchedCount === 0) return NextResponse.json({ error: "Category not found" }, { status: 404 });
@@ -63,12 +87,33 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
         const { id } = await params;
         const user = await getUserFromNextRequest(req);
         requireAdminFromNextRequestSync(user);
-        
+
         const categories = await categoriesCollection();
+        const products = await productsCollection();
+
+        const [childCount, productCount] = await Promise.all([
+            categories.countDocuments({ parentId: id }),
+            products.countDocuments({ categories: id }),
+        ]);
+
+        if (childCount > 0 || productCount > 0) {
+            const parts: string[] = [];
+            if (childCount > 0) parts.push(`${childCount} subcategor${childCount === 1 ? "y" : "ies"}`);
+            if (productCount > 0) parts.push(`${productCount} product${productCount === 1 ? "" : "s"}`);
+            return NextResponse.json(
+                {
+                    error: `Cannot delete: category still has ${parts.join(" and ")}. Reassign or delete them first.`,
+                    childCount,
+                    productCount,
+                },
+                { status: 409 }
+            );
+        }
+
         const result = await categories.deleteOne({ _id: id });
-        
+
         if (result.deletedCount === 0) return NextResponse.json({ error: "Category not found" }, { status: 404 });
-        
+
         return NextResponse.json({ ok: true });
     } catch (err) {
         if (err instanceof Response) throw err;

@@ -14,9 +14,9 @@ export default function ProductCard({ product }: { product: ProductCardProduct }
     return (
         <Link
             href={`/p/${product.slug}`}
-            className="group flex flex-col rounded-md border border-zinc-200 bg-white p-3 transition hover:shadow-md"
+            className="group flex flex-col rounded-md border border-slate-700 bg-slate-900 p-3 transition hover:border-sky-500/50 hover:shadow-md"
         >
-            <div className="aspect-square w-full overflow-hidden rounded bg-zinc-100">
+            <div className="aspect-square w-full overflow-hidden rounded bg-slate-800">
                 {cover ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -25,13 +25,13 @@ export default function ProductCard({ product }: { product: ProductCardProduct }
                         className="h-full w-full object-cover transition group-hover:scale-105"
                     />
                 ) : (
-                    <div className="flex h-full w-full items-center justify-center text-xs text-zinc-400">
+                    <div className="flex h-full w-full items-center justify-center text-xs text-slate-400">
                         No image
                     </div>
                 )}
             </div>
-            <h3 className="mt-2 line-clamp-2 text-sm text-zinc-800">{product.title}</h3>
-            <p className="mt-auto pt-2 text-base font-semibold text-zinc-900">
+            <h3 className="mt-2 line-clamp-2 text-sm text-slate-200">{product.title}</h3>
+            <p className="mt-auto pt-2 text-base font-semibold text-white">
                 {product.currency ?? "INR"} {product.price}
             </p>
         </Link>

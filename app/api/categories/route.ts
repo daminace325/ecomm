@@ -56,6 +56,16 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "A category with this slug already exists" }, { status: 409 });
         }
 
+        if (parsed.data.parentId) {
+            const parent = await categories.findOne({ _id: parsed.data.parentId });
+            if (!parent) {
+                return NextResponse.json({ error: "Parent category not found" }, { status: 404 });
+            }
+            if (parent.parentId) {
+                return NextResponse.json({ error: "Only 2-level category nesting is allowed" }, { status: 400 });
+            }
+        }
+
         await categories.insertOne(category);
 
         return NextResponse.json({ category }, { status: 201 });

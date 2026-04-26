@@ -14,7 +14,25 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Shipping address required" }, { status: 400 });
         }
 
-        const shippingAddress = user.addresses[0];
+        let addressIndex = 0;
+        try {
+            const body = await req.json();
+            if (body && typeof body.addressIndex === "number") {
+                addressIndex = body.addressIndex;
+            }
+        } catch {
+            // No body or invalid JSON — fall back to default index 0.
+        }
+
+        if (
+            !Number.isInteger(addressIndex) ||
+            addressIndex < 0 ||
+            addressIndex >= user.addresses.length
+        ) {
+            return NextResponse.json({ error: "Invalid address selection" }, { status: 400 });
+        }
+
+        const shippingAddress = user.addresses[addressIndex];
 
         const carts = await cartsCollection();
         const cart = await carts.findOne({ userId: user._id });
