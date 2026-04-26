@@ -2,14 +2,14 @@ import { getUserFromNextRequest, requireAdminFromNextRequestSync } from "@/lib/a
 import { categoriesCollection, productsCollection } from "@/lib/collections";
 import { newId } from "@/lib/id";
 import { CreateProductSchema } from "@/lib/validators";
-import { escapeRegex } from "@/lib/strings";
 import { NextRequest, NextResponse } from "next/server";
+import type { Sort } from "mongodb";
 import { z } from "zod";
 
 export async function GET(req: NextRequest) {
     try {
         const url = new URL(req.url);
-        const q = url.searchParams.get("q") ?? "";
+        const q = (url.searchParams.get("q") ?? "").trim();
         const category = url.searchParams.get("category");
         const minPrice = url.searchParams.get("minPrice");
         const maxPrice = url.searchParams.get("maxPrice");
@@ -18,8 +18,11 @@ export async function GET(req: NextRequest) {
         const page = Math.max(1, Number(url.searchParams.get("page") ?? "1"));
         const limit = Math.min(100, Math.max(1, Number(url.searchParams.get("limit") ?? "12")));
 
+        // Use the products_text index for keyword search. Searches title,
+        // description and tags (with title weighted highest). Note: $text
+        // matches whole tokens with stemming — no partial-word/prefix match.
         const filter: Record<string, unknown> = {};
-        if (q) filter.title = { $regex: escapeRegex(q), $options: "i" };
+        if (q) filter.$text = { $search: q };
         if (category) filter.categories = category;
 
         const priceFilter: Record<string, number> = {};
@@ -27,18 +30,25 @@ export async function GET(req: NextRequest) {
         if (maxPrice !== null && !isNaN(Number(maxPrice))) priceFilter.$lte = Number(maxPrice);
         if (Object.keys(priceFilter).length > 0) filter.price = priceFilter;
 
-        const sortMap: Record<string, Record<string, 1 | -1>> = {
+        const sortMap: Record<string, Sort> = {
             newest: { createdAt: -1 },
             price_asc: { price: 1 },
             price_desc: { price: -1 },
         };
-        const sortSpec = sortMap[sort] ?? sortMap.newest;
+        // When a search term is present, default to relevance ordering.
+        const sortSpec: Sort = sort === "relevance" || (q && !sortMap[sort])
+            ? { score: { $meta: "textScore" } }
+            : sortMap[sort] ?? sortMap.newest;
+
+        const projection: Record<string, unknown> = {
+            title: 1, price: 1, currency: 1, images: 1, slug: 1, stock: 1,
+        };
+        if (q) projection.score = { $meta: "textScore" };
 
         const products = await productsCollection();
         const cursor = products
-            .find(filter)
-            .sort(sortSpec)
-            .project({ title: 1, price: 1, currency: 1, images: 1, slug: 1, stock: 1 });
+            .find(filter, { projection })
+            .sort(sortSpec);
         const items = await cursor.skip((page - 1) * limit).limit(limit).toArray();
         const total = await products.countDocuments(filter);
 
