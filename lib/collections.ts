@@ -17,6 +17,7 @@ async function ensureIndexes(database: Db): Promise<void> {
     const products = database.collection<Product>("products");
     const categories = database.collection<Category>("categories");
     const users = database.collection<User>("users");
+    const carts = database.collection<Cart>("carts");
     await Promise.all([
       // Full-text search across title, description, tags. Title weighted highest.
       products.createIndex(
@@ -26,6 +27,8 @@ async function ensureIndexes(database: Db): Promise<void> {
       products.createIndex({ slug: 1 }, { unique: true }),
       categories.createIndex({ slug: 1 }, { unique: true }),
       users.createIndex({ email: 1 }, { unique: true }),
+      // One cart per user. Prevents duplicate carts from racing GET/POST.
+      carts.createIndex({ userId: 1 }, { unique: true }),
     ]);
   })().catch((err) => {
     // Reset so a future call can retry; but log so the operator notices.
@@ -51,7 +54,9 @@ export async function categoriesCollection(): Promise<Collection<Category>> {
   return database.collection<Category>("categories");
 }
 export async function cartsCollection(): Promise<Collection<Cart>> {
-  return (await db()).collection<Cart>("carts");
+  const database = await db();
+  await ensureIndexes(database);
+  return database.collection<Cart>("carts");
 }
 export async function ordersCollection(): Promise<Collection<Order>> {
   return (await db()).collection<Order>("orders");
