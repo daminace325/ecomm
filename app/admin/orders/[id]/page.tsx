@@ -63,9 +63,14 @@ export default async function AdminOrderDetailPage({
     const products = await productsCollection();
     const productDocs = await products
         .find({ _id: { $in: order.items.map((i) => i.productId) } })
-        .project({ title: 1, slug: 1, images: 1 })
+        .project({ title: 1, slug: 1, images: 1, currency: 1 })
         .toArray();
     const productById = new Map(productDocs.map((p) => [p._id as string, p]));
+
+    const orderCurrency =
+        order.items[0]?.currency ??
+        productById.get(order.items[0]?.productId)?.currency ??
+        "INR";
 
     return (
         <div className="px-8 py-8">
@@ -102,6 +107,10 @@ export default async function AdminOrderDetailPage({
                         <div className="mt-4 divide-y divide-slate-800 rounded-lg border border-slate-800 bg-slate-900">
                             {order.items.map((item, idx) => {
                                 const product = productById.get(item.productId);
+                                const title = item.title ?? product?.title ?? "Unavailable product";
+                                const image = item.image ?? product?.images?.[0] ?? null;
+                                const slug = item.slug ?? product?.slug ?? null;
+                                const currency = item.currency ?? product?.currency ?? "INR";
                                 const lineTotal = item.price * item.qty;
                                 return (
                                     <div
@@ -109,10 +118,10 @@ export default async function AdminOrderDetailPage({
                                         className="flex gap-4 p-4"
                                     >
                                         <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-slate-950">
-                                            {product?.images?.[0] ? (
+                                            {image ? (
                                                 <Image
-                                                    src={product.images[0]}
-                                                    alt={product.title ?? ""}
+                                                    src={image}
+                                                    alt={title}
                                                     width={64}
                                                     height={64}
                                                     className="h-full w-full object-cover"
@@ -121,28 +130,28 @@ export default async function AdminOrderDetailPage({
                                         </div>
                                         <div className="flex flex-1 items-center justify-between gap-4">
                                             <div className="min-w-0">
-                                                {product?.slug ? (
+                                                {slug ? (
                                                     <Link
-                                                        href={`/p/${product.slug}`}
+                                                        href={`/p/${slug}`}
                                                         className="truncate text-sm font-medium text-white hover:text-sky-300"
                                                     >
-                                                        {product.title}
+                                                        {title}
                                                     </Link>
                                                 ) : (
                                                     <div className="truncate text-sm font-medium text-slate-300">
-                                                        {product?.title ?? "Unavailable product"}
+                                                        {title}
                                                     </div>
                                                 )}
                                                 <div className="text-xs text-slate-400">
                                                     Qty {item.qty} ·{" "}
-                                                    {formatMoney(item.price, "INR")} each
+                                                    {formatMoney(item.price, currency)} each
                                                 </div>
                                                 <div className="mt-0.5 font-mono text-[10px] text-slate-600">
                                                     {item.productId}
                                                 </div>
                                             </div>
                                             <div className="text-sm font-medium text-white">
-                                                {formatMoney(lineTotal, "INR")}
+                                                {formatMoney(lineTotal, currency)}
                                             </div>
                                         </div>
                                     </div>
@@ -206,24 +215,24 @@ export default async function AdminOrderDetailPage({
                         <dl className="mt-4 space-y-2 text-sm">
                             <div className="flex justify-between text-slate-300">
                                 <dt>Subtotal</dt>
-                                <dd>{formatMoney(order.subtotal, "INR")}</dd>
+                                <dd>{formatMoney(order.subtotal, orderCurrency)}</dd>
                             </div>
                             <div className="flex justify-between text-slate-300">
                                 <dt>Shipping</dt>
                                 <dd>
                                     {order.shipping
-                                        ? formatMoney(order.shipping, "INR")
+                                        ? formatMoney(order.shipping, orderCurrency)
                                         : "Free"}
                                 </dd>
                             </div>
                             <div className="flex justify-between text-slate-300">
                                 <dt>Tax</dt>
-                                <dd>{order.tax ? formatMoney(order.tax, "INR") : "—"}</dd>
+                                <dd>{order.tax ? formatMoney(order.tax, orderCurrency) : "—"}</dd>
                             </div>
                             <div className="my-3 h-px bg-slate-800" />
                             <div className="flex justify-between text-base font-semibold text-white">
                                 <dt>Total</dt>
-                                <dd>{formatMoney(order.total, "INR")}</dd>
+                                <dd>{formatMoney(order.total, orderCurrency)}</dd>
                             </div>
                         </dl>
                     </div>

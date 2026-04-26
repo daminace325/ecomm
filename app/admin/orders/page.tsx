@@ -154,6 +154,7 @@ export default async function AdminOrdersPage({
                             {items.map((order) => {
                                 const user = userById.get(order.userId);
                                 const itemCount = order.items.reduce((s, i) => s + i.qty, 0);
+                                const orderCurrency = order.items[0]?.currency ?? "INR";
                                 return (
                                     <tr key={order._id} className="hover:bg-slate-800/40">
                                         <td className="px-4 py-3">
@@ -176,7 +177,7 @@ export default async function AdminOrdersPage({
                                             {itemCount}
                                         </td>
                                         <td className="px-4 py-3 text-right font-medium text-white">
-                                            {formatMoney(order.total, "INR")}
+                                            {formatMoney(order.total, orderCurrency)}
                                         </td>
                                         <td className="px-4 py-3">
                                             <span

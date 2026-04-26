@@ -104,6 +104,7 @@ export default async function OrdersPage({
                     <div className="mt-8 space-y-4">
                         {items.map((order) => {
                             const itemCount = order.items.reduce((s, i) => s + i.qty, 0);
+                            const orderCurrency = order.items[0]?.currency ?? "INR";
                             return (
                                 <Link
                                     key={order._id}
@@ -131,7 +132,7 @@ export default async function OrdersPage({
                                         </div>
                                         <div className="text-right">
                                             <div className="text-lg font-semibold text-white">
-                                                {formatMoney(order.total, "INR")}
+                                                {formatMoney(order.total, orderCurrency)}
                                             </div>
                                             <div className="mt-1 text-xs text-sky-400">
                                                 View details →

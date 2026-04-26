@@ -82,6 +82,13 @@ export interface OrderItem {
   qty: number;
   price: number;
   vendorId?: ID;
+  // Snapshot of product display fields at order time. Captured so the order
+  // remains a faithful historical record even if the product is later edited
+  // or deleted. Optional for backward compatibility with pre-snapshot orders.
+  title?: string;
+  image?: string;
+  slug?: string;
+  currency?: string;
 }
 
 export interface Order {

@@ -105,7 +105,13 @@ export async function POST(req: NextRequest) {
                 productId: product._id,
                 qty: cartItem.qty,
                 price: unitPrice,
-                vendorId: product.vendorId ?? undefined
+                vendorId: product.vendorId ?? undefined,
+                // Snapshot product display fields so the order survives
+                // future product edits/deletes.
+                title: product.title,
+                image: product.images?.[0],
+                slug: product.slug,
+                currency: product.currency,
             };
         });
 
