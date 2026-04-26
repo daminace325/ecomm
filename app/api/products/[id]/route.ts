@@ -1,9 +1,14 @@
 import { getUserFromNextRequest, requireAdminFromNextRequestSync } from "@/lib/auth_server";
-import { categoriesCollection, productsCollection } from "@/lib/collections";
+import { categoriesCollection, ordersCollection, productsCollection } from "@/lib/collections";
 import { destroyImagesByUrl } from "@/lib/cloudinary";
 import { UpdateProductSchema } from "@/lib/validators";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+
+// Order statuses where the product is still "in flight" (not yet completed
+// or cancelled). Deleting a product referenced by any of these would orphan
+// active fulfillment work, so we block it.
+const IN_FLIGHT_ORDER_STATUSES = ["pending", "paid", "processing", "shipped"] as const;
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
@@ -88,6 +93,25 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
         requireAdminFromNextRequestSync(user);
 
         const products = await productsCollection();
+
+        // Block delete if any in-flight order references this product. Admin
+        // must cancel/refund those orders first. Delivered/cancelled/refunded
+        // orders are unaffected because their display is preserved by the
+        // snapshot fields on each order item.
+        const orders = await ordersCollection();
+        const inFlightCount = await orders.countDocuments({
+            "items.productId": id,
+            status: { $in: [...IN_FLIGHT_ORDER_STATUSES] },
+        });
+        if (inFlightCount > 0) {
+            return NextResponse.json(
+                {
+                    error: `Cannot delete: this product is part of ${inFlightCount} active order${inFlightCount === 1 ? "" : "s"}. Cancel or complete ${inFlightCount === 1 ? "it" : "them"} first.`,
+                },
+                { status: 409 }
+            );
+        }
+
         // Read images first so we can clean them up after the delete.
         const product = await products.findOne({ _id: id }, { projection: { images: 1 } });
         const result = await products.deleteOne({ _id: id });
