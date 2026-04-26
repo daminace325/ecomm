@@ -9,21 +9,23 @@ export async function GET(req: NextRequest) {
         if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const carts = await cartsCollection();
-        let cart = await carts.findOne({ userId: user._id });
+        const now = new Date().toISOString();
 
-        if (!cart) {
-            const now = new Date().toISOString();
-            const _id = newId();
+        // Upsert ensures exactly one cart per user even under concurrent requests
+        // (the unique index on userId would otherwise reject the second insert).
+        const cart = await carts.findOneAndUpdate(
+            { userId: user._id },
+            {
+                $setOnInsert: {
+                    _id: newId(),
+                    userId: user._id,
+                    items: [],
+                    updatedAt: now,
+                },
+            },
+            { upsert: true, returnDocument: "after" }
+        );
 
-            cart = {
-                _id,
-                userId: user._id,
-                items: [],
-                updatedAt: now
-            };
-
-            await carts.insertOne(cart);
-        }
         return NextResponse.json({ cart });
     } catch (err) {
         return NextResponse.json({ error: "Failed to fetch cart" }, { status: 500 });
@@ -52,41 +54,47 @@ export async function POST(req: NextRequest) {
         if (!product) return NextResponse.json({ error: "Product not found" }, { status: 404 });
 
         const carts = await cartsCollection();
-        const existing = await carts.findOne({ userId: user._id });
-
         const now = new Date().toISOString();
-        const cart = existing ?? {
-            _id: newId(),
-            userId: user._id,
-            items: [],
-            updatedAt: now,
-        };
 
-        const itemIndex = cart.items.findIndex(
-            (item) => item.productId === productId
+        // Ensure cart exists race-safely. The unique index on userId means
+        // concurrent upserts collapse to a single document.
+        await carts.updateOne(
+            { userId: user._id },
+            {
+                $setOnInsert: {
+                    _id: newId(),
+                    userId: user._id,
+                    items: [],
+                    updatedAt: now,
+                },
+            },
+            { upsert: true }
         );
 
-        if (itemIndex >= 0) {
-            cart.items[itemIndex].qty += qty;
-        } else {
-            cart.items.push({
-                productId,
-                qty,
-                priceAtAdd: product.price
-            })
-        }
+        // Try to bump qty on an existing line item; if no line item matched,
+        // push a new one. Two ops because Mongo can't conditionally choose
+        // between $inc-on-match and $push-on-miss in a single update.
+        const incResult = await carts.updateOne(
+            { userId: user._id, "items.productId": productId },
+            {
+                $inc: { "items.$.qty": qty },
+                $set: { updatedAt: now },
+            }
+        );
 
-        cart.updatedAt = new Date().toISOString();
-
-        if (existing) {
+        if (incResult.matchedCount === 0) {
             await carts.updateOne(
                 { userId: user._id },
-                { $set: { items: cart.items, updatedAt: cart.updatedAt } }
+                {
+                    $push: {
+                        items: { productId, qty, priceAtAdd: product.price },
+                    },
+                    $set: { updatedAt: now },
+                }
             );
-        } else {
-            await carts.insertOne(cart);
         }
 
+        const cart = await carts.findOne({ userId: user._id });
         return NextResponse.json({ cart });
     } catch (err) {
         return NextResponse.json({ error: "Failed to update cart" }, { status: 500 });
