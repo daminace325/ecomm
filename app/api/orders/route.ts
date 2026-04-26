@@ -132,7 +132,8 @@ export async function POST(req: NextRequest) {
             shipping,
             total,
             status: "pending" as const,
-            createdAt: now
+            createdAt: now,
+            updatedAt: now
         };
 
         const orders = await ordersCollection();
