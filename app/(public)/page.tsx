@@ -2,6 +2,11 @@ import Link from "next/link";
 import { categoriesCollection, productsCollection } from "@/lib/collections";
 import ProductCard from "@/components/ProductCard";
 
+// ISR: regenerate the home page at most once every 60 seconds.
+// Reads from MongoDB but doesn't need instant consistency, so we
+// serve a cached page and refresh in the background.
+export const revalidate = 60;
+
 export default async function Home() {
     const categories = await categoriesCollection();
     const products = await productsCollection();
