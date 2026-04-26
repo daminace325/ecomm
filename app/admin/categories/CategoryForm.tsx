@@ -3,20 +3,14 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Category } from "@/models/types";
+import { slugify } from "@/lib/strings";
+import { formatApiError } from "@/lib/errors";
 
 type Props = {
     mode: "create" | "edit";
     initial?: Pick<Category, "_id" | "name" | "slug" | "parentId">;
     parentOptions: Array<{ _id: string; name: string }>;
 };
-
-function slugify(value: string) {
-    return value
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "");
-}
 
 export default function CategoryForm({ mode, initial, parentOptions }: Props) {
     const router = useRouter();
@@ -55,11 +49,7 @@ export default function CategoryForm({ mode, initial, parentOptions }: Props) {
 
             const data = await res.json();
             if (!res.ok) {
-                setError(
-                    typeof data.error === "string"
-                        ? data.error
-                        : "Failed to save category"
-                );
+                setError(formatApiError(data?.error, "Failed to save category"));
                 return;
             }
 

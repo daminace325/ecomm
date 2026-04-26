@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ShoppingCart, Check } from "lucide-react";
+import { formatApiError } from "@/lib/errors";
 
 export default function AddToCart({
     productId,
@@ -38,7 +39,7 @@ export default function AddToCart({
 
             const data = await res.json();
             if (!res.ok) {
-                setError(typeof data.error === "string" ? data.error : "Failed to add to cart");
+                setError(formatApiError(data?.error, "Failed to add to cart"));
                 return;
             }
 

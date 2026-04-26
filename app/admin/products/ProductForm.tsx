@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Upload, X, Loader2 } from "lucide-react";
 import type { Product } from "@/models/types";
+import { slugify } from "@/lib/strings";
+import { formatApiError } from "@/lib/errors";
 
 type CategoryOption = { _id: string; name: string };
 
@@ -15,14 +17,6 @@ type Props = {
     >;
     categoryOptions: CategoryOption[];
 };
-
-function slugify(value: string) {
-    return value
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "");
-}
 
 export default function ProductForm({ mode, initial, categoryOptions }: Props) {
     const router = useRouter();
@@ -72,7 +66,7 @@ export default function ProductForm({ mode, initial, categoryOptions }: Props) {
                 });
                 const data = await res.json();
                 if (!res.ok) {
-                    setError(typeof data.error === "string" ? data.error : "Upload failed");
+                    setError(formatApiError(data?.error, "Upload failed"));
                     break;
                 }
                 setImages((prev) => [...prev, data.url]);
@@ -131,11 +125,7 @@ export default function ProductForm({ mode, initial, categoryOptions }: Props) {
             const data = await res.json();
 
             if (!res.ok) {
-                setError(
-                    typeof data.error === "string"
-                        ? data.error
-                        : "Failed to save product"
-                );
+                setError(formatApiError(data?.error, "Failed to save product"));
                 return;
             }
 

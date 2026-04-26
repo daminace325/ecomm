@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, X } from "lucide-react";
+import { formatApiError } from "@/lib/errors";
 
 export default function CancelOrderButton({ orderId }: { orderId: string }) {
     const router = useRouter();
@@ -17,7 +18,7 @@ export default function CancelOrderButton({ orderId }: { orderId: string }) {
             const res = await fetch(`/api/orders/${orderId}/cancel`, { method: "POST" });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) {
-                setError(data?.error ?? "Failed to cancel order");
+                setError(formatApiError(data?.error, "Failed to cancel order"));
                 setLoading(false);
                 return;
             }

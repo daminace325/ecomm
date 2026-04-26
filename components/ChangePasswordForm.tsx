@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { formatApiError } from "@/lib/errors";
 
 export default function ChangePasswordForm() {
     const router = useRouter();
@@ -39,7 +40,7 @@ export default function ChangePasswordForm() {
             });
             const data = await res.json();
             if (!res.ok) {
-                setError(typeof data.error === "string" ? data.error : "Failed to change password");
+                setError(formatApiError(data?.error, "Failed to change password"));
                 return;
             }
             setSaved(true);

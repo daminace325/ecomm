@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import type { Address } from "@/models/types";
+import { formatApiError } from "@/lib/errors";
 
 type Row = {
     productId: string;
@@ -50,7 +51,7 @@ export default function CheckoutClient({ addresses, rows, subtotal, currency }: 
             });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) {
-                setError(data?.error ?? "Failed to place order");
+                setError(formatApiError(data?.error, "Failed to place order"));
                 setPlacing(false);
                 return;
             }

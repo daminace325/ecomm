@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { formatApiError } from "@/lib/errors";
 
 export default function SigninPage() {
     const router = useRouter();
@@ -28,7 +29,7 @@ export default function SigninPage() {
 
             const data = await res.json();
             if (!res.ok) {
-                setError(typeof data.error === "string" ? data.error : "Sign in failed");
+                setError(formatApiError(data?.error, "Sign in failed"));
                 return;
             }
 

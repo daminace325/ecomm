@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Search as SearchIcon } from "lucide-react";
 import { productsCollection } from "@/lib/collections";
 import ProductCard from "@/components/ProductCard";
+import { escapeRegex } from "@/lib/strings";
 
 export const dynamic = "force-dynamic";
 
@@ -13,10 +14,6 @@ const SORT_OPTIONS = [
     { value: "price_desc", label: "Price: high to low" },
 ] as const;
 type SortValue = (typeof SORT_OPTIONS)[number]["value"];
-
-function escapeRegex(str: string) {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
 
 export default async function SearchPage({
     searchParams,
@@ -33,37 +30,38 @@ export default async function SearchPage({
 
     if (rawQuery.length > 0) {
         const products = await productsCollection();
-        const regex = new RegExp(escapeRegex(rawQuery), "i");
-        const filter = {
-            $or: [
-                { title: { $regex: regex } },
-                { description: { $regex: regex } },
-                { tags: { $regex: regex } },
-            ],
-        };
 
-        let mongoSort: Record<string, 1 | -1>;
-        switch (sort) {
-            case "price_asc":
-                mongoSort = { price: 1 };
-                break;
-            case "price_desc":
-                mongoSort = { price: -1 };
-                break;
-            case "newest":
-                mongoSort = { createdAt: -1 };
-                break;
-            case "relevance":
-            default:
-                // No real text-index scoring — fall back to newest.
-                mongoSort = { createdAt: -1 };
-                break;
+        // Use MongoDB $text search when sorting by relevance; fall back to
+        // a regex $or for other sorts so partial-word matches still surface
+        // (e.g. "phon" should match "phone"; $text only matches whole words).
+        const useTextSearch = sort === "relevance";
+        const filter = useTextSearch
+            ? { $text: { $search: rawQuery } }
+            : {
+                  $or: [
+                      { title: { $regex: escapeRegex(rawQuery), $options: "i" } },
+                      { description: { $regex: escapeRegex(rawQuery), $options: "i" } },
+                      { tags: { $regex: escapeRegex(rawQuery), $options: "i" } },
+                  ],
+              };
+
+        let cursor;
+        if (useTextSearch) {
+            cursor = products
+                .find(filter, { projection: { score: { $meta: "textScore" } } })
+                .sort({ score: { $meta: "textScore" } });
+        } else {
+            const mongoSort: Record<string, 1 | -1> =
+                sort === "price_asc"
+                    ? { price: 1 }
+                    : sort === "price_desc"
+                      ? { price: -1 }
+                      : { createdAt: -1 };
+            cursor = products.find(filter).sort(mongoSort);
         }
 
         total = await products.countDocuments(filter);
-        items = await products
-            .find(filter)
-            .sort(mongoSort)
+        items = await cursor
             .skip((page - 1) * PAGE_SIZE)
             .limit(PAGE_SIZE)
             .project({ title: 1, slug: 1, price: 1, currency: 1, images: 1 })

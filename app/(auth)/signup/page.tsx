@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { formatApiError } from "@/lib/errors";
 
 export default function SignupPage() {
     const router = useRouter();
@@ -29,7 +30,7 @@ export default function SignupPage() {
 
             const signupData = await signupRes.json();
             if (!signupRes.ok) {
-                setError(typeof signupData.error === "string" ? signupData.error : "Sign up failed");
+                setError(formatApiError(signupData?.error, "Sign up failed"));
                 return;
             }
 

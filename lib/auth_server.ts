@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
+import { cache } from "react";
 import jwt from "jsonwebtoken";
 import { usersCollection } from "./collections";
 import type { User } from "../models/types";
@@ -25,7 +26,9 @@ export async function getUserFromNextRequest(req: NextRequest): Promise<User | n
   }
 }
 
-export async function getUserFromCookies(): Promise<User | null> {
+// Wrapped in React's cache() so multiple server components in the same render
+// pass share a single DB lookup (e.g. layout + page + nested server component).
+export const getUserFromCookies = cache(async (): Promise<User | null> => {
   const cookieStore = await cookies();
   const token = cookieStore.get(cookieName)?.value;
   if (!token) return null;
@@ -38,7 +41,7 @@ export async function getUserFromCookies(): Promise<User | null> {
   } catch {
     return null;
   }
-}
+});
 
 export function requireAdminFromNextRequestSync(user: User | null) {
   if (!user || user.role !== "admin") {

@@ -1,15 +1,19 @@
 import Link from "next/link";
 import { Search, User } from "lucide-react";
 import { categoriesCollection } from "@/lib/collections";
+import { getUserFromCookies } from "@/lib/auth_server";
 import CartBadge from "./CartBadge";
 
 export default async function Navbar() {
     const categories = await categoriesCollection();
-    const topCategories = await categories
-        .find({ $or: [{ parentId: null }, { parentId: { $exists: false } }] })
-        .sort({ name: 1 })
-        .limit(10)
-        .toArray();
+    const [topCategories, user] = await Promise.all([
+        categories
+            .find({ $or: [{ parentId: null }, { parentId: { $exists: false } }] })
+            .sort({ name: 1 })
+            .limit(10)
+            .toArray(),
+        getUserFromCookies(),
+    ]);
 
     return (
         <header className="sticky top-0 z-50 bg-slate-900 text-white shadow">
@@ -36,7 +40,7 @@ export default async function Navbar() {
                     </div>
                 </form>
 
-                <CartBadge />
+                <CartBadge isAuthenticated={!!user} />
 
                 <Link
                     href="/account"

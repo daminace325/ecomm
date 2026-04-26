@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import type { OrderStatus } from "@/models/types";
+import { formatApiError } from "@/lib/errors";
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
     pending: "Order Placed",
@@ -60,7 +61,7 @@ export default function OrderStatusControls({ orderId, currentStatus }: Props) {
             });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) {
-                setError(data?.error ?? "Failed to update status");
+                setError(formatApiError(data?.error, "Failed to update status"));
                 setUpdating(null);
                 return;
             }

@@ -1,5 +1,6 @@
 import { getUserFromNextRequest, requireAdminFromNextRequestSync } from "@/lib/auth_server";
 import { categoriesCollection, productsCollection } from "@/lib/collections";
+import { destroyImagesByUrl } from "@/lib/cloudinary";
 import { UpdateProductSchema } from "@/lib/validators";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -53,9 +54,24 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             }
         }
 
+        // If images array is being updated, find which existing images are no
+        // longer referenced and delete them from Cloudinary (best-effort).
+        let removedImages: string[] = [];
+        if (parsed.data.images) {
+            const existing = await products.findOne({ _id: id }, { projection: { images: 1 } });
+            const oldImages = existing?.images ?? [];
+            const newSet = new Set(parsed.data.images);
+            removedImages = oldImages.filter((u) => !newSet.has(u));
+        }
+
         const result = await products.updateOne({ _id: id }, { $set: updatedData });
 
         if (result.matchedCount === 0) return NextResponse.json({ error: "Product not found" }, { status: 404 });
+
+        if (removedImages.length > 0) {
+            // Fire-and-forget; don't block the response on Cloudinary.
+            destroyImagesByUrl(removedImages).catch(() => {});
+        }
 
         const updated = await products.findOne({_id: id});
         return NextResponse.json({ product: updated })
@@ -72,9 +88,15 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
         requireAdminFromNextRequestSync(user);
 
         const products = await productsCollection();
+        // Read images first so we can clean them up after the delete.
+        const product = await products.findOne({ _id: id }, { projection: { images: 1 } });
         const result = await products.deleteOne({ _id: id });
 
         if (result.deletedCount === 0) return NextResponse.json({ error: "Product not found" }, { status: 404 });
+
+        if (product?.images && product.images.length > 0) {
+            destroyImagesByUrl(product.images).catch(() => {});
+        }
 
         return NextResponse.json({ ok: true });
     } catch (err) {

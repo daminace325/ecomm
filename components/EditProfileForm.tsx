@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { formatApiError } from "@/lib/errors";
 
 export default function EditProfileForm({
     initialName,
@@ -30,7 +31,7 @@ export default function EditProfileForm({
             });
             const data = await res.json();
             if (!res.ok) {
-                setError(typeof data.error === "string" ? data.error : "Failed to save");
+                setError(formatApiError(data?.error, "Failed to save"));
                 return;
             }
             setSaved(true);

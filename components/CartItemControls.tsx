@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Trash2, Loader2 } from "lucide-react";
+import { formatApiError } from "@/lib/errors";
 
 type Props = {
     productId: string;
@@ -28,7 +29,7 @@ export default function CartItemControls({ productId, qty, stock }: Props) {
             });
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
-                setError(typeof data.error === "string" ? data.error : "Failed to update");
+                setError(formatApiError(data?.error, "Failed to update"));
                 return;
             }
             startTransition(() => router.refresh());
@@ -49,7 +50,7 @@ export default function CartItemControls({ productId, qty, stock }: Props) {
             });
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
-                setError(typeof data.error === "string" ? data.error : "Failed to remove");
+                setError(formatApiError(data?.error, "Failed to remove"));
                 return;
             }
             startTransition(() => router.refresh());

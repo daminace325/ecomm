@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
 import type { Address } from "@/models/types";
+import { formatApiError } from "@/lib/errors";
 
 type Mode = { kind: "list" } | { kind: "new" } | { kind: "edit"; index: number };
 
@@ -23,7 +24,7 @@ export default function AddressesManager({
         });
         if (!res.ok) {
             const data = await res.json().catch(() => ({}));
-            alert(typeof data.error === "string" ? data.error : "Failed to delete");
+            alert(formatApiError(data?.error, "Failed to delete"));
             return;
         }
         const data = await res.json();
@@ -45,7 +46,7 @@ export default function AddressesManager({
         });
         const data = await res.json();
         if (!res.ok) {
-            return typeof data.error === "string" ? data.error : "Failed to save";
+            return formatApiError(data?.error, "Failed to save");
         }
         setAddresses(data.addresses ?? []);
         setMode({ kind: "list" });

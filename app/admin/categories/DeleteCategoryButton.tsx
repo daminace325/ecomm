@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
+import { formatApiError } from "@/lib/errors";
 
 export default function DeleteCategoryButton({ id, name }: { id: string; name: string }) {
     const router = useRouter();
@@ -15,7 +16,7 @@ export default function DeleteCategoryButton({ id, name }: { id: string; name: s
             const res = await fetch(`/api/categories/${id}`, { method: "DELETE" });
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
-                alert(typeof data.error === "string" ? data.error : "Failed to delete");
+                alert(formatApiError(data?.error, "Failed to delete"));
                 return;
             }
             router.refresh();

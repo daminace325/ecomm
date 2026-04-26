@@ -2,6 +2,7 @@ import { getUserFromNextRequest, requireAdminFromNextRequestSync } from "@/lib/a
 import { categoriesCollection, productsCollection } from "@/lib/collections";
 import { newId } from "@/lib/id";
 import { CreateProductSchema } from "@/lib/validators";
+import { escapeRegex } from "@/lib/strings";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
         const limit = Math.min(100, Math.max(1, Number(url.searchParams.get("limit") ?? "12")));
 
         const filter: Record<string, unknown> = {};
-        if (q) filter.title = { $regex: q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" };
+        if (q) filter.title = { $regex: escapeRegex(q), $options: "i" };
         if (category) filter.categories = category;
 
         const priceFilter: Record<string, number> = {};

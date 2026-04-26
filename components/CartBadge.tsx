@@ -6,10 +6,14 @@ import { useEffect, useState } from "react";
 
 type CartItem = { qty: number };
 
-export default function CartBadge() {
+export default function CartBadge({ isAuthenticated }: { isAuthenticated: boolean }) {
     const [count, setCount] = useState(0);
 
     useEffect(() => {
+        if (!isAuthenticated) {
+            setCount(0);
+            return;
+        }
         let cancelled = false;
         fetch("/api/cart")
             .then((r) => (r.ok ? r.json() : { cart: { items: [] as CartItem[] } }))
@@ -23,7 +27,7 @@ export default function CartBadge() {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [isAuthenticated]);
 
     return (
         <Link
