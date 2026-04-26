@@ -7,7 +7,7 @@ import type { OrderStatus } from "@/models/types";
 
 export const dynamic = "force-dynamic";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 
 const STATUS_STYLES: Record<OrderStatus, string> = {
     pending: "bg-amber-500/15 text-amber-300 border-amber-500/30",
