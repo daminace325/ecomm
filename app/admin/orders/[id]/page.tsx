@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ordersCollection, productsCollection, usersCollection } from "@/lib/collections";
+import { formatMoney } from "@/lib/money";
 import type { OrderStatus } from "@/models/types";
 import OrderStatusControls from "@/components/OrderStatusControls";
 
@@ -26,14 +27,6 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
     cancelled: "Cancelled",
     refunded: "Refunded",
 };
-
-function formatMoney(value: number, currency: string) {
-    try {
-        return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(value);
-    } catch {
-        return `${currency} ${value.toFixed(2)}`;
-    }
-}
 
 function formatDateTime(iso: string) {
     return new Date(iso).toLocaleString(undefined, {

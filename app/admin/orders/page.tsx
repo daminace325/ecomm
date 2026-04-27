@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ordersCollection, usersCollection } from "@/lib/collections";
+import { formatMoney } from "@/lib/money";
 import type { OrderStatus } from "@/models/types";
 
 export const dynamic = "force-dynamic";
@@ -36,14 +37,6 @@ const FILTERS: { value: OrderStatus | "all"; label: string }[] = [
     { value: "cancelled", label: "Cancelled" },
     { value: "refunded", label: "Refunded" },
 ];
-
-function formatMoney(value: number, currency: string) {
-    try {
-        return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(value);
-    } catch {
-        return `${currency} ${value.toFixed(2)}`;
-    }
-}
 
 function formatDate(iso: string) {
     return new Date(iso).toLocaleDateString(undefined, {

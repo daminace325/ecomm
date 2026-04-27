@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus, Pencil } from "lucide-react";
 import { productsCollection } from "@/lib/collections";
+import { formatMoney } from "@/lib/money";
 import DeleteProductButton from "./DeleteProductButton";
 
 export const dynamic = "force-dynamic";
@@ -74,8 +75,10 @@ export default async function AdminProductsPage() {
                                             </code>
                                         </td>
                                         <td className="px-4 py-3 text-slate-300">
-                                            {(p.currency as string | undefined) ?? "INR"}{" "}
-                                            {p.price as number}
+                                            {formatMoney(
+                                                p.price as number,
+                                                (p.currency as string | undefined) ?? "INR"
+                                            )}
                                         </td>
                                         <td className="px-4 py-3">
                                             <span

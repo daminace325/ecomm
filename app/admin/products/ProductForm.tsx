@@ -6,6 +6,7 @@ import { Upload, X, Loader2 } from "lucide-react";
 import type { Product } from "@/models/types";
 import { slugify } from "@/lib/strings";
 import { formatApiError } from "@/lib/errors";
+import { toMajor, toMinor } from "@/lib/money";
 
 type CategoryOption = { _id: string; name: string };
 
@@ -25,8 +26,10 @@ export default function ProductForm({ mode, initial, categoryOptions }: Props) {
     const [slug, setSlug] = useState(initial?.slug ?? "");
     const [slugTouched, setSlugTouched] = useState(Boolean(initial?.slug));
     const [description, setDescription] = useState(initial?.description ?? "");
+    // Form holds price in major units (e.g. "49.00" rupees). Stored in DB as
+    // integer minor units (paise) — converted at submit and on initial load.
     const [price, setPrice] = useState<string>(
-        initial?.price !== undefined ? String(initial.price) : ""
+        initial?.price !== undefined ? String(toMajor(initial.price)) : ""
     );
     const [currency, setCurrency] = useState(initial?.currency ?? "INR");
     const [stock, setStock] = useState<string>(
@@ -106,7 +109,7 @@ export default function ProductForm({ mode, initial, categoryOptions }: Props) {
             slug: slug.trim(),
             description: description.trim() || undefined,
             images,
-            price: priceNum,
+            price: toMinor(priceNum),
             currency: currency.trim() || "INR",
             categories,
             stock: stockNum,

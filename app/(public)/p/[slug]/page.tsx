@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { categoriesCollection, productsCollection } from "@/lib/collections";
+import { formatMoney } from "@/lib/money";
 import ProductGallery from "@/components/ProductGallery";
 import AddToCart from "@/components/AddToCart";
 
@@ -92,7 +93,7 @@ export default async function ProductDetailPage({
 
                     <div className="mt-6 flex items-baseline gap-3">
                         <span className="text-3xl font-bold text-white">
-                            {product.currency ?? "INR"} {product.price}
+                            {formatMoney(product.price, product.currency ?? "INR")}
                         </span>
                     </div>
 

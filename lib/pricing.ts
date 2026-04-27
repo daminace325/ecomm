@@ -1,4 +1,5 @@
 import type { Address } from "@/models/types";
+import { applyRate } from "@/lib/money";
 
 /**
  * Single source of truth for tax & shipping calculation.
@@ -9,17 +10,18 @@ import type { Address } from "@/models/types";
  *
  * Keep this file pure and deterministic so server and client agree on totals.
  *
- * All amounts are in the currency's major unit (e.g. rupees, dollars), matching
- * the rest of the codebase. Results are rounded to 2 decimal places.
+ * All amounts are in **integer minor units** (paise / cents). See lib/money.ts.
  */
 
 export interface PricingInput {
+    /** Subtotal in minor units. */
     subtotal: number;
     currency: string;
     shippingAddress?: Address;
 }
 
 export interface PricingBreakdown {
+    /** All amounts are integer minor units. */
     subtotal: number;
     shipping: number;
     tax: number;
@@ -32,35 +34,40 @@ export interface PricingBreakdown {
 }
 
 interface CurrencyRule {
-    /** Flat shipping fee charged when subtotal is below freeShippingOver. */
+    /** Flat shipping fee in minor units, charged when subtotal < freeShippingOver. */
     shippingFlat: number;
-    /** Subtotal at which shipping becomes free. */
+    /** Subtotal threshold (minor units) at which shipping becomes free. */
     freeShippingOver: number;
     /** Tax rate as a fraction (0.18 = 18%). */
     taxRate: number;
     taxLabel?: string;
     currencySymbol: string;
+    /** Free-shipping threshold in major units, for human-readable notes only. */
+    freeShippingOverMajor: number;
 }
 
 // Conservative defaults. Real rates should come from a tax provider per
 // jurisdiction; this is a sensible MVP that matches the current INR-first UX.
 const RULES: Record<string, CurrencyRule> = {
     INR: {
-        shippingFlat: 49,
-        freeShippingOver: 499,
+        shippingFlat: 4900,         // ₹49
+        freeShippingOver: 49900,    // ₹499
+        freeShippingOverMajor: 499,
         taxRate: 0.18,
         taxLabel: "GST",
         currencySymbol: "₹",
     },
     USD: {
-        shippingFlat: 5,
-        freeShippingOver: 50,
+        shippingFlat: 500,          // $5
+        freeShippingOver: 5000,     // $50
+        freeShippingOverMajor: 50,
         taxRate: 0,
         currencySymbol: "$",
     },
     EUR: {
-        shippingFlat: 5,
-        freeShippingOver: 50,
+        shippingFlat: 500,
+        freeShippingOver: 5000,
+        freeShippingOverMajor: 50,
         taxRate: 0,
         currencySymbol: "€",
     },
@@ -69,24 +76,21 @@ const RULES: Record<string, CurrencyRule> = {
 const DEFAULT_RULE: CurrencyRule = {
     shippingFlat: 0,
     freeShippingOver: 0,
+    freeShippingOverMajor: 0,
     taxRate: 0,
     currencySymbol: "",
 };
 
-function round2(n: number): number {
-    return Math.round((n + Number.EPSILON) * 100) / 100;
-}
-
 export function calculatePricing(input: PricingInput): PricingBreakdown {
-    const subtotal = round2(Math.max(0, input.subtotal));
+    const subtotal = Math.max(0, Math.round(input.subtotal || 0));
     const currency = input.currency || "INR";
     const rule = RULES[currency] ?? DEFAULT_RULE;
 
     const freeShipping = subtotal >= rule.freeShippingOver && rule.freeShippingOver > 0;
-    const shipping = subtotal === 0 ? 0 : freeShipping ? 0 : round2(rule.shippingFlat);
+    const shipping = subtotal === 0 ? 0 : freeShipping ? 0 : rule.shippingFlat;
 
-    const tax = round2(subtotal * rule.taxRate);
-    const total = round2(subtotal + shipping + tax);
+    const tax = applyRate(subtotal, rule.taxRate);
+    const total = subtotal + shipping + tax;
 
     let shippingNote: string | undefined;
     if (subtotal === 0) {
@@ -94,8 +98,8 @@ export function calculatePricing(input: PricingInput): PricingBreakdown {
     } else if (freeShipping) {
         shippingNote = "Free shipping";
     } else if (rule.freeShippingOver > 0) {
-        const remaining = round2(rule.freeShippingOver - subtotal);
-        shippingNote = `Free over ${rule.currencySymbol}${rule.freeShippingOver} · add ${rule.currencySymbol}${remaining} more`;
+        const remainingMajor = (rule.freeShippingOver - subtotal) / 100;
+        shippingNote = `Free over ${rule.currencySymbol}${rule.freeShippingOverMajor} · add ${rule.currencySymbol}${remainingMajor.toFixed(2)} more`;
     }
 
     const taxNote =

@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { formatMoney } from "@/lib/money";
 
 type ProductCardProduct = {
     _id: string;
     title: string;
     slug: string;
+    /** Integer minor units (paise / cents). */
     price: number;
     currency?: string;
     images?: string[];
@@ -32,7 +34,7 @@ export default function ProductCard({ product }: { product: ProductCardProduct }
             </div>
             <h3 className="mt-2 line-clamp-2 text-sm text-slate-200">{product.title}</h3>
             <p className="mt-auto pt-2 text-base font-semibold text-white">
-                {product.currency ?? "INR"} {product.price}
+                {formatMoney(product.price, product.currency ?? "INR")}
             </p>
         </Link>
     );

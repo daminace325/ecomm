@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ShoppingCart, AlertTriangle } from "lucide-react";
 import { getUserFromCookies } from "@/lib/auth_server";
 import { cartsCollection, productsCollection } from "@/lib/collections";
+import { formatMoney } from "@/lib/money";
 import CartItemControls from "@/components/CartItemControls";
 import ClearCartButton from "@/components/ClearCartButton";
 
@@ -121,7 +122,7 @@ export default async function CartPage() {
                                         {product.title as string}
                                     </Link>
                                     <p className="text-sm text-slate-400">
-                                        {currency} {item.priceAtAdd} each
+                                        {formatMoney(item.priceAtAdd, currency)} each
                                     </p>
                                     {overStock && (
                                         <p className="inline-flex items-center gap-1 text-xs text-amber-300">
@@ -139,7 +140,7 @@ export default async function CartPage() {
 
                                 <div className="flex flex-col items-end justify-between gap-3">
                                     <p className="text-base font-semibold text-white">
-                                        {currency} {lineTotal}
+                                        {formatMoney(lineTotal, currency)}
                                     </p>
                                     <CartItemControls
                                         productId={item.productId}
@@ -161,7 +162,7 @@ export default async function CartPage() {
                                 {rows.reduce((n, r) => n + r.item.qty, 0) === 1 ? "" : "s"})
                             </dt>
                             <dd>
-                                {currency} {subtotal}
+                                {formatMoney(subtotal, currency)}
                             </dd>
                         </div>
                         <div className="flex justify-between text-slate-300">
@@ -171,7 +172,7 @@ export default async function CartPage() {
                         <div className="flex justify-between border-t border-slate-700 pt-3 text-base font-semibold text-white">
                             <dt>Total</dt>
                             <dd>
-                                {currency} {subtotal}
+                                {formatMoney(subtotal, currency)}
                             </dd>
                         </div>
                     </dl>

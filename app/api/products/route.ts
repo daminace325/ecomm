@@ -25,9 +25,16 @@ export async function GET(req: NextRequest) {
         if (q) filter.$text = { $search: q };
         if (category) filter.categories = category;
 
+        // minPrice/maxPrice query params accept **major units** (rupees /
+        // dollars) for human-friendly URLs; converted to minor units before
+        // querying since DB stores integer minor units.
         const priceFilter: Record<string, number> = {};
-        if (minPrice !== null && !isNaN(Number(minPrice))) priceFilter.$gte = Number(minPrice);
-        if (maxPrice !== null && !isNaN(Number(maxPrice))) priceFilter.$lte = Number(maxPrice);
+        if (minPrice !== null && !isNaN(Number(minPrice))) {
+            priceFilter.$gte = Math.round(Number(minPrice) * 100);
+        }
+        if (maxPrice !== null && !isNaN(Number(maxPrice))) {
+            priceFilter.$lte = Math.round(Number(maxPrice) * 100);
+        }
         if (Object.keys(priceFilter).length > 0) filter.price = priceFilter;
 
         const sortMap: Record<string, Sort> = {

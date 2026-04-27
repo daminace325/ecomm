@@ -1,11 +1,12 @@
 import { z } from "zod";
 
+// Money fields are integer minor units (paise / cents). See lib/money.ts.
 export const CreateProductSchema = z.object({
   title: z.string().min(1),
   slug: z.string().min(1),
   description: z.string().optional(),
   images: z.array(z.string()).optional().default([]),
-  price: z.number().nonnegative(),
+  price: z.number().int().nonnegative(),
   currency: z.string().default("INR"),
   categories: z.array(z.string()).optional().default([]),
   stock: z.number().int().nonnegative().default(0),
@@ -16,7 +17,7 @@ export const UpdateProductSchema = z.object({
   slug: z.string().min(1).optional(),
   description: z.string().optional(),
   images: z.array(z.string()).optional(),
-  price: z.number().nonnegative().optional(),
+  price: z.number().int().nonnegative().optional(),
   currency: z.string().optional(),
   categories: z.array(z.string()).optional(),
   stock: z.number().int().nonnegative().optional(),

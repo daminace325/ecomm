@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { Check, Circle } from "lucide-react";
 import { getUserFromCookies } from "@/lib/auth_server";
 import { ordersCollection, productsCollection } from "@/lib/collections";
+import { formatMoney } from "@/lib/money";
 import type { OrderStatus } from "@/models/types";
 import CancelOrderButton from "@/components/CancelOrderButton";
 
@@ -31,14 +32,6 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
 
 const TIMELINE: OrderStatus[] = ["pending", "paid", "processing", "shipped", "delivered"];
 const CANCELLABLE: OrderStatus[] = ["pending", "paid"];
-
-function formatMoney(value: number, currency: string) {
-    try {
-        return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(value);
-    } catch {
-        return `${currency} ${value.toFixed(2)}`;
-    }
-}
 
 function formatDateTime(iso: string) {
     return new Date(iso).toLocaleString(undefined, {

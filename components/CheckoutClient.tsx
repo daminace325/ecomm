@@ -7,13 +7,16 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import type { Address } from "@/models/types";
 import { formatApiError } from "@/lib/errors";
+import { formatMoney } from "@/lib/money";
 
 type Row = {
     productId: string;
     title: string;
     image: string | null;
     qty: number;
+    /** Integer minor units. */
     unitPrice: number;
+    /** Integer minor units. */
     lineTotal: number;
     stockIssue: boolean;
     missing: boolean;
@@ -22,6 +25,7 @@ type Row = {
 interface Props {
     addresses: Address[];
     rows: Row[];
+    /** All amounts below are integer minor units. */
     subtotal: number;
     shipping: number;
     tax: number;
@@ -29,14 +33,6 @@ interface Props {
     currency: string;
     shippingNote?: string;
     taxNote?: string;
-}
-
-function formatMoney(value: number, currency: string) {
-    try {
-        return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(value);
-    } catch {
-        return `${currency} ${value.toFixed(2)}`;
-    }
 }
 
 export default function CheckoutClient({

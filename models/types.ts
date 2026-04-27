@@ -23,6 +23,7 @@ export interface ProductVariant {
   id: string;
   attrs: Record<string, string>;
   stock: number;
+  /** Integer minor units (paise / cents). See lib/money.ts. */
   price?: number;
 }
 
@@ -32,7 +33,8 @@ export interface Product {
   slug: string;
   description?: string;
   images: string[];
-  price: number; 
+  /** Integer minor units (paise / cents). See lib/money.ts. */
+  price: number;
   currency: string;
   categories: ID[];
   sku?: string;
@@ -57,6 +59,7 @@ export interface CartItem {
   productId: ID;
   variantId?: string;
   qty: number;
+  /** Integer minor units (paise / cents) snapshot at add-to-cart time. */
   priceAtAdd: number;
 }
 
@@ -80,6 +83,7 @@ export interface OrderItem {
   productId: ID;
   variantId?: string;
   qty: number;
+  /** Integer minor units (paise / cents). */
   price: number;
   vendorId?: ID;
   // Snapshot of product display fields at order time. Captured so the order
@@ -97,6 +101,7 @@ export interface Order {
   items: OrderItem[];
   shippingAddress: Address;
   billingAddress?: Address;
+  /** All monetary fields are integer minor units (paise / cents). */
   subtotal: number;
   tax: number;
   shipping: number;

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Package } from "lucide-react";
 import { getUserFromCookies } from "@/lib/auth_server";
 import { ordersCollection } from "@/lib/collections";
+import { formatMoney } from "@/lib/money";
 import type { OrderStatus } from "@/models/types";
 
 export const dynamic = "force-dynamic";
@@ -28,14 +29,6 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
     cancelled: "Cancelled",
     refunded: "Refunded",
 };
-
-function formatMoney(value: number, currency: string) {
-    try {
-        return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(value);
-    } catch {
-        return `${currency} ${value.toFixed(2)}`;
-    }
-}
 
 function formatDate(iso: string) {
     return new Date(iso).toLocaleDateString(undefined, {
