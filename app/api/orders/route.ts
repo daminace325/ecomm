@@ -1,6 +1,7 @@
 import { getUserFromNextRequest } from "@/lib/auth_server";
 import { cartsCollection, ordersCollection, productsCollection } from "@/lib/collections";
 import { newId } from "@/lib/id";
+import { calculatePricing } from "@/lib/pricing";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -115,9 +116,12 @@ export async function POST(req: NextRequest) {
             };
         });
 
-        const tax = 0;
-        const shipping = 0;
-        const total = subtotal + tax + shipping;
+        const orderCurrency = orderItems[0]?.currency ?? "INR";
+        const pricing = calculatePricing({
+            subtotal,
+            currency: orderCurrency,
+            shippingAddress,
+        });
 
         const now = new Date().toISOString();
         const _id = newId();
@@ -127,10 +131,10 @@ export async function POST(req: NextRequest) {
             userId: user._id,
             items: orderItems,
             shippingAddress,
-            subtotal,
-            tax,
-            shipping,
-            total,
+            subtotal: pricing.subtotal,
+            tax: pricing.tax,
+            shipping: pricing.shipping,
+            total: pricing.total,
             status: "pending" as const,
             createdAt: now,
             updatedAt: now

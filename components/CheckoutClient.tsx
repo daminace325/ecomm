@@ -23,7 +23,12 @@ interface Props {
     addresses: Address[];
     rows: Row[];
     subtotal: number;
+    shipping: number;
+    tax: number;
+    total: number;
     currency: string;
+    shippingNote?: string;
+    taxNote?: string;
 }
 
 function formatMoney(value: number, currency: string) {
@@ -34,7 +39,17 @@ function formatMoney(value: number, currency: string) {
     }
 }
 
-export default function CheckoutClient({ addresses, rows, subtotal, currency }: Props) {
+export default function CheckoutClient({
+    addresses,
+    rows,
+    subtotal,
+    shipping,
+    tax,
+    total,
+    currency,
+    shippingNote,
+    taxNote,
+}: Props) {
     const router = useRouter();
     const [selected, setSelected] = useState(0);
     const [placing, setPlacing] = useState(false);
@@ -58,8 +73,6 @@ export default function CheckoutClient({ addresses, rows, subtotal, currency }: 
             const orderId = data?.order?._id;
             if (orderId) {
                 router.push(`/orders/${orderId}`);
-            } else {
-                router.push("/orders");
             }
             router.refresh();
         } catch {
@@ -67,8 +80,6 @@ export default function CheckoutClient({ addresses, rows, subtotal, currency }: 
             setPlacing(false);
         }
     }
-
-    const total = subtotal;
 
     return (
         <div className="mt-8 grid gap-8 lg:grid-cols-[2fr_1fr]">
@@ -165,12 +176,26 @@ export default function CheckoutClient({ addresses, rows, subtotal, currency }: 
                             <dd>{formatMoney(subtotal, currency)}</dd>
                         </div>
                         <div className="flex justify-between text-slate-300">
-                            <dt>Shipping</dt>
-                            <dd>Free</dd>
+                            <dt>
+                                Shipping
+                                {shippingNote && (
+                                    <span className="ml-2 text-xs text-slate-500">
+                                        {shippingNote}
+                                    </span>
+                                )}
+                            </dt>
+                            <dd>
+                                {shipping === 0 ? "Free" : formatMoney(shipping, currency)}
+                            </dd>
                         </div>
                         <div className="flex justify-between text-slate-300">
-                            <dt>Tax</dt>
-                            <dd>—</dd>
+                            <dt>
+                                Tax
+                                {taxNote && (
+                                    <span className="ml-2 text-xs text-slate-500">{taxNote}</span>
+                                )}
+                            </dt>
+                            <dd>{tax === 0 ? "—" : formatMoney(tax, currency)}</dd>
                         </div>
                         <div className="my-3 h-px bg-slate-700" />
                         <div className="flex justify-between text-base font-semibold text-white">

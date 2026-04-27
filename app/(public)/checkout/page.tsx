@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { AlertTriangle, MapPin } from "lucide-react";
 import { getUserFromCookies } from "@/lib/auth_server";
 import { cartsCollection, productsCollection } from "@/lib/collections";
+import { calculatePricing } from "@/lib/pricing";
 import CheckoutClient from "@/components/CheckoutClient";
 
 export const dynamic = "force-dynamic";
@@ -57,6 +58,11 @@ export default async function CheckoutPage() {
         (productDocs.find((p) => p.currency)?.currency as string | undefined) ?? "INR";
     const blocked = rows.some((r) => r.missing || r.stockIssue);
     const addresses = user.addresses ?? [];
+    const pricing = calculatePricing({
+        subtotal,
+        currency,
+        shippingAddress: addresses[0],
+    });
 
     return (
         <main className="mx-auto max-w-6xl px-4 py-10">
@@ -110,8 +116,13 @@ export default async function CheckoutPage() {
                 <CheckoutClient
                     addresses={addresses}
                     rows={rows}
-                    subtotal={subtotal}
-                    currency={currency}
+                    subtotal={pricing.subtotal}
+                    shipping={pricing.shipping}
+                    tax={pricing.tax}
+                    total={pricing.total}
+                    shippingNote={pricing.shippingNote}
+                    taxNote={pricing.taxNote}
+                    currency={pricing.currency}
                 />
             )}
         </main>

@@ -1,5 +1,6 @@
 import { getUserFromNextRequest } from "@/lib/auth_server";
 import { cartsCollection, productsCollection } from "@/lib/collections";
+import { calculatePricing } from "@/lib/pricing";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -62,13 +63,19 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Insufficient Stock", productId: stockError.productId }, { status: 409 });
         }
 
-        const total = subtotal;
+        const currency = (productDocs.find(p => p.currency)?.currency as string | undefined) ?? "INR";
+        const pricing = calculatePricing({ subtotal, currency });
 
         return NextResponse.json({
             cartId: cart._id,
             items,
-            subtotal,
-            total
+            currency: pricing.currency,
+            subtotal: pricing.subtotal,
+            shipping: pricing.shipping,
+            tax: pricing.tax,
+            total: pricing.total,
+            shippingNote: pricing.shippingNote,
+            taxNote: pricing.taxNote,
         });
     } catch (err) {
         return NextResponse.json({ error: "Failed to get cart summary" }, { status: 500 });
